@@ -97,7 +97,7 @@ public class ARFFBuilder {
 	        		String [] lineArray = positions.split(",");
 	        		int count = 0;
 	        		output = output +"\n";
-	        		output = output +"<";
+	        		//output = output +"<";
 	        		for (int i = 0; i <= highestLength; i++) {
 	        			if(count >= lineArray.length) {
 	        				output = output +"?";
@@ -108,8 +108,8 @@ public class ARFFBuilder {
 	        			output = output +",";	
 	        			count++;
 	        		}
-	        		output = output + ">";
-	        		out.println(action + "\n");
+	        		output = output + "," + action;
+	        		//out.println(action + "\n");
 	        		out.println(output);
 	        		
 	        		
