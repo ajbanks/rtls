@@ -3,7 +3,6 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-//package footballstats;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -28,69 +27,125 @@ public class PosLogToArff {
     int timeCount = 0;
     
     public void readFile(String logDate, String action, int numberOfPlayers, String playerIds[]) throws FileNotFoundException{
+        //get start and end time of each instance of an action from csv file
+        //and put it in actionTimes array
         readCSVFile(logDate, action);
-        for (int i = 0; i < actionTimes.length; i++){
-            System.out.println(i + ": " + actionTimes[i]);
-        }
+//        for (int i = 0; i < actionTimes.length; i++){
+//            System.out.println(i + ": " + actionTimes[i]);
+//        }
         
         //read log file
         int numActions = actionTimes.length/2;
         actions = new ArrayList<ArrayList<String>>(numActions);
         String fileName = "logs/" + logDate + "/pos_log.txt";
         Scanner file = new Scanner(new File(fileName));
-        boolean startRecording = false;
+        int startRecording = 0;
         String actionStart = action + " start";
         String actionEnd = action + " end";
-        //the action number eg pass 0, pass 1, pass 2
-        int actionCount = 0;       
-        //this indicates whther an action has started
+        //the index currently at from the actionTime array eg pass 0 starts, pass 0 end, pass 1 start
+        int actionTimeCount = 0;
+        //the action instance number eg pass 0, pass 1, pass 2
+        int actionCount = 0;
+        //this indicates whether an instance of an action has started
         boolean hasStarted = false;
-        while (file.hasNextLine())
+        //current line number
+        int lineNumber = -1;
+        //while the file has a next line and the end of the action hasnt been
+        //reached yet
+        while (file.hasNextLine() && startRecording != 2)
         {
+            //get the next line and increment current line number
             String lineFromFile = file.nextLine();
-            //beginning of action
+            lineNumber++;
+            
+            //if beginning of action set startRecording to 1
             if(lineFromFile.contains(actionStart))
             {
-                startRecording = true;
+                startRecording = 1;
                 System.out.println(lineFromFile);
             }
+            //if end of action set startRecording to 2
             if (lineFromFile.contains(actionEnd))
             {
-                startRecording = false;
+                System.out.println("HANKII");
+                startRecording = 2;
                 System.out.println(lineFromFile);
+                break;
             }
             
-            //if action has begun
-            if (startRecording){
-                
-                if (actionTimes[actionCount] == time){
-                    if (hasStarted){
-                        hasStarted = false;
-                        actionCount++;
-                    }
-                    else{
-                        hasStarted  = true;
-                        actions.add(new ArrayList<String>());
-                    }
-                    
-                }
-                if (hasStarted){
-                    actions.get(actionCount).add(lineFromFile);
-                    while (file.hasNextLine()){
-                        lineFromFile = file.nextLine();
-                        if (lineFromFile.length() != 0){
-                            actions.get(actionCount).add(lineFromFile);
-                        }
-                        else
-                            break;
-                    }
-                }
+            //if start of action has begun then get positions of each instance 
+            //of an action and put it in actions ArrayList
+            if (startRecording == 1){
                 
                 //100 milliseconds has passed so increase time
                 if (lineFromFile.length() > 0 && lineFromFile.charAt(0) == '['){
+                    //System.out.println(lineFromFile);
                     time = timeCount/10.0;
                     timeCount++;
+                    lineFromFile = file.nextLine();
                 }
+                System.out.println(time);
+                
+                //if the time is equal to the time in actionTimes then 
+                //it is either the beginnging of an instance of an action
+                if (actionTimes[actionTimeCount] == time){
+                    //if an instance has already started then it is now
+                    //the end of the instance and increase actionTimeCount
+                    //to go to the next element in actionTimes (which will be
+                    //the start of the next instance)
+                    if (hasStarted){
+                        hasStarted = false;
+                        actionTimeCount++;
+                        System.out.println("END OF INSTANCE");
+//                        for (int i = 0; i < actions.size(); i++){
+//                            System.out.println(i + ":");
+//                            for(int j = 0; j < actions.get(i).size(); j++)
+//                                System.out.println(actions.get(i).get(j));
+//                        }
+                        System.out.println("output done from array");
+                    }
+                    //else if an instance hasnt already started then it is now
+                    //the beginning of an instance and increase actionTimeCount
+                    //to go to the next element in actionTimes (which will be the
+                    //end of this instance). Add new ArrayList to actions
+                    //to hold positios for this instance
+                    else{
+                        hasStarted  = true;
+                        actions.add(new ArrayList<String>());
+                        actionTimeCount++;
+                        actionCount++;
+                        System.out.println("START OF INSTANCE");
+                    }
+                    
+                }
+                //if an instance has started then add the lines for this 
+                //0.1 second to the ArrayList
+                if (hasStarted){
+                    System.out.println(lineFromFile);
+                    String line = lineFromFile;
+                    //get next lines that are part of this 0.1 second
+                    while (file.hasNextLine()){
+                        lineFromFile = file.nextLine();
+                        System.out.println(lineFromFile);
+                        if (lineFromFile.length() != 0){
+                            line += " + " + lineFromFile;
+                        }
+                        else{
+                            //go back to previous line
+                            //goToPreviousLine(file, lineNumber);
+                            //exit loop
+                            break;
+                        }
+                        lineNumber++;
+                    }
+                    System.out.println("done");
+                    // add line to the current instance
+                    actions.get(actionCount-1).add(line);
+                    System.out.println("actioncount: " + (actionCount-1));
+                }
+                
+                
+                
             }
         }
         
@@ -98,6 +153,15 @@ public class PosLogToArff {
             System.out.println(i + ":");
             for(int j = 0; j < actions.get(i).size(); j++)
             System.out.println(actions.get(i).get(j));
+        }
+        System.out.println("number of passes: " + (actionTimes.length/2));
+        System.out.println("time count: " + actionCount);
+    }
+    
+    private void goToPreviousLine(Scanner file, int lineNumber){
+        for(int i = 0; i <= lineNumber;i++){
+            if(file.hasNextLine())
+                file.nextLine();
         }
     }
     
