@@ -36,7 +36,7 @@ public class PosLogToArff {
         //read log file
         int numActions = actionTimes.length/2;
         actions = new ArrayList<ArrayList<String>>(numActions);
-        String fileName = "../../logs/" + logDate + "/pos_log.txt";
+        String fileName = "logs/" + logDate + "/pos_log.txt";
         Scanner file = new Scanner(new File(fileName));
         boolean startRecording = false;
         String actionStart = action + " start";
@@ -102,7 +102,7 @@ public class PosLogToArff {
     }
     
     public void readCSVFile(String logDate, String action) throws FileNotFoundException{
-        String fileName = "../../logs/" + logDate + "/" + action + ".csv";
+        String fileName = "logs/" + logDate + "/" + action + ".csv";
         Scanner file = new Scanner(new File(fileName));
         
         int lines = 0;
