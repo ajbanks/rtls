@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
+package footballstats;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -38,7 +38,7 @@ public class PosLogToArff {
         //read log file
         int numActions = actionTimes.length/2;
         actions = new ArrayList<ArrayList<String>>(numActions);
-        String fileName = "logs/" + logDate + "/pos_log.txt";
+        String fileName = "../../logs/" + logDate + "/pos_log_2.txt";
         Scanner file = new Scanner(new File(fileName));
         int startRecording = 0;
         String actionStart = action + " start";
@@ -53,7 +53,8 @@ public class PosLogToArff {
         int lineNumber = -1;
         //while the file has a next line and the end of the action hasnt been
         //reached yet
-        while (file.hasNextLine() && startRecording != 2)
+        
+        while (file.hasNextLine() && startRecording != 2 && actionTimeCount != actionTimes.length)
         {
             //get the next line and increment current line number
             String lineFromFile = file.nextLine();
@@ -63,30 +64,20 @@ public class PosLogToArff {
             if(lineFromFile.contains(actionStart))
             {
                 startRecording = 1;
-                System.out.println(lineFromFile);
+                //System.out.println(lineFromFile);
+                lineFromFile = file.nextLine();
             }
             //if end of action set startRecording to 2
             if (lineFromFile.contains(actionEnd))
             {
-                System.out.println("HANKII");
                 startRecording = 2;
-                System.out.println(lineFromFile);
+                //System.out.println(lineFromFile);
                 break;
             }
             
             //if start of action has begun then get positions of each instance 
             //of an action and put it in actions ArrayList
-            if (startRecording == 1){
-                
-                //100 milliseconds has passed so increase time
-                if (lineFromFile.length() > 0 && lineFromFile.charAt(0) == '['){
-                    //System.out.println(lineFromFile);
-                    time = timeCount/10.0;
-                    timeCount++;
-                    lineFromFile = file.nextLine();
-                }
-                System.out.println(time);
-                
+            if (startRecording == 1){               
                 //if the time is equal to the time in actionTimes then 
                 //it is either the beginnging of an instance of an action
                 if (actionTimes[actionTimeCount] == time){
@@ -97,13 +88,7 @@ public class PosLogToArff {
                     if (hasStarted){
                         hasStarted = false;
                         actionTimeCount++;
-                        System.out.println("END OF INSTANCE");
-//                        for (int i = 0; i < actions.size(); i++){
-//                            System.out.println(i + ":");
-//                            for(int j = 0; j < actions.get(i).size(); j++)
-//                                System.out.println(actions.get(i).get(j));
-//                        }
-                        System.out.println("output done from array");
+                        //System.out.println("END OF INSTANCE");
                     }
                     //else if an instance hasnt already started then it is now
                     //the beginning of an instance and increase actionTimeCount
@@ -115,9 +100,10 @@ public class PosLogToArff {
                         actions.add(new ArrayList<String>());
                         actionTimeCount++;
                         actionCount++;
-                        System.out.println("START OF INSTANCE");
+                        //System.out.println("START OF INSTANCE");
+                        //System.out.println(lineFromFile);
                     }
-                    
+                    //System.out.println("actiontime count: " + actionTimeCount);
                 }
                 //if an instance has started then add the lines for this 
                 //0.1 second to the ArrayList
@@ -139,13 +125,18 @@ public class PosLogToArff {
                         }
                         lineNumber++;
                     }
-                    System.out.println("done");
-                    // add line to the current instance
+                    //add line to the current instance
                     actions.get(actionCount-1).add(line);
-                    System.out.println("actioncount: " + (actionCount-1));
+                    //System.out.println("actioncount: " + (actionCount-1));
+                    lineFromFile = file.nextLine();
                 }
                 
-                
+                //100 milliseconds has passed so increase time
+                if (lineFromFile.length() > 0 && lineFromFile.charAt(0) == '['){
+                    time = timeCount/10.0;
+                    timeCount++;
+                    //lineFromFile = file.nextLine();
+                }
                 
             }
         }
@@ -155,8 +146,10 @@ public class PosLogToArff {
             for(int j = 0; j < actions.get(i).size(); j++)
             System.out.println(actions.get(i).get(j));
         }
-        System.out.println("number of passes: " + (actionTimes.length/2));
-        System.out.println("time count: " + actionCount);
+        System.out.println("number of actions in file: " + (actionTimes.length/2));
+        System.out.println("number of actions counted: " + actionCount);
+        System.out.println("number of times in file: " + actionTimes.length);
+        System.out.println("number of times went by: " + actionTimeCount);
     }
     
     private void goToPreviousLine(Scanner file, int lineNumber){
@@ -167,7 +160,7 @@ public class PosLogToArff {
     }
     
     public void readCSVFile(String logDate, String action) throws FileNotFoundException{
-        String fileName = "logs/" + logDate + "/" + action + ".csv";
+        String fileName = "../../logs/" + logDate + "/" + action + ".csv";
         Scanner file = new Scanner(new File(fileName));
         
         int lines = 0;
