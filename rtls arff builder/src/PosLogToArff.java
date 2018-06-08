@@ -7,8 +7,15 @@ package footballstats;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Scanner;
 
 /**
@@ -30,7 +37,7 @@ public class PosLogToArff {
     String[] playerIDs;
     double[][] lastKnownPositions;
     
-    public void readFile(String logDate, String action, String tagIDs[]) throws FileNotFoundException{
+    public void readFile(String logDate, String action, String tagIDs[]) throws FileNotFoundException, IOException{
         //get start and end time of each instance of an action from csv file
         //and put it in actionTimes array
         readCSVFile(logDate, action);
@@ -73,6 +80,7 @@ public class PosLogToArff {
             //if end of action set startRecording to 2
             if (lineFromFile.contains(actionEnd))
             {
+                System.out.println("FOUND THE END");
                 startRecording = 2;
                 //System.out.println(lineFromFile);
                 break;
@@ -111,14 +119,21 @@ public class PosLogToArff {
                 //if an instance has started then add the lines for this 
                 //0.1 second to the ArrayList
                 if (hasStarted){
-                    System.out.println(lineFromFile);
+                    //System.out.println(lineFromFile);
                     String line = lineFromFile;
                     //get next lines that are part of this 0.1 second
                     while (file.hasNextLine()){
                         lineFromFile = file.nextLine();
-                        System.out.println(lineFromFile);
+                        if (lineFromFile.contains(actionEnd))
+                        {
+                            System.out.println("FOUND THE END");
+                            startRecording = 2;
+                            //System.out.println(lineFromFile);
+                            break;
+                        }
+                        //System.out.println(lineFromFile);
                         if (lineFromFile.length() != 0){
-                            line += " + " + lineFromFile;
+                            line += " & " + lineFromFile;
                         }
                         else{
                             //go back to previous line
@@ -134,6 +149,13 @@ public class PosLogToArff {
                     actions.get(actionCount-1).add(line);
                     //System.out.println("actioncount: " + (actionCount-1));
                     lineFromFile = file.nextLine();
+                    if (lineFromFile.contains(actionEnd))
+                    {
+                        System.out.println("FOUND THE END");
+                        startRecording = 2;
+                        //System.out.println(lineFromFile);
+                        break;
+                    }
                 }
                 
                 //100 milliseconds has passed so increase time
@@ -155,6 +177,8 @@ public class PosLogToArff {
         System.out.println("number of actions counted: " + actionCount);
         System.out.println("number of times in file: " + actionTimes.length);
         System.out.println("number of times went by: " + actionTimeCount);
+        
+        createOutput(action);
     }
     
     private String addMissingPositions(String output){
@@ -164,7 +188,7 @@ public class PosLogToArff {
             for (int i = 0; i < numPlayers; i++){
                 if (!output.contains(playerIDs[i])){
                     playersInOutput++;
-                    output += " + " + (playersInOutput-1) +") " +  playerIDs[i] + "[";
+                    output += " & " + (playersInOutput-1) +") " +  playerIDs[i] + "[";
                     for (int j = 0; j < lastKnownPositions[i].length; j++){
                         if (j == 0)
                             output += lastKnownPositions[i][j];
@@ -172,7 +196,7 @@ public class PosLogToArff {
                             output += "," + lastKnownPositions[i][j];
                     }
                     output += ",0,x00]";
-                    System.out.println("WAS MISSING " + output);                    
+                    //System.out.println("WAS MISSING " + output);                    
                 }
             }
         }
@@ -200,17 +224,17 @@ public class PosLogToArff {
     }
     
     public void readCSVFile(String logDate, String action) throws FileNotFoundException{
-        String fileName = "../../logs/" + logDate + "/" + action + ".csv";
+        String fileName = "../../logs/" + logDate + "/" + action + "2.csv";
         Scanner file = new Scanner(new File(fileName));
         
         int lines = 0;
-        System.out.println("start");
+        //System.out.println("start");
         while (file.hasNextLine()) {
             lines++;
             file.nextLine();
         }
             
-        System.out.println("done");
+        //System.out.println("done");
         actionTimes = new double[(lines-1)*2];
         int count = 0;
         
@@ -235,4 +259,54 @@ public class PosLogToArff {
         
     }
 
+    
+    public void createOutput(String action) throws IOException{
+        String actionNum = action + "_";
+        List<String> lines = new ArrayList<>();
+        String output;
+        for (int i = 0; i < actions.size(); i++){
+            output = actionNum + i;
+            lines.add(output);
+            output = "[";
+            for(int j = 0; j < actions.get(i).size(); j++){
+                String actionLine = actions.get(i).get(j);
+                String[] actionLinesParts = actionLine.split(" & ");
+                for (int k = 0; k < actionLinesParts.length; k++){
+                    if (k == 0)
+                        output += positionsForLine(actionLinesParts[k]);
+                    else
+                        output += "," + positionsForLine(actionLinesParts[k]);
+                }
+            }
+            output += "]\n";
+            lines.add(output);
+        }
+        
+        Path file = Paths.get(action + "_output.txt");
+        Files.write(file, lines, Charset.forName("UTF-8"));
+    }
+    
+    public String positionsForLine(String line){
+        //find position of opening bracket and third comma
+        int openingBracketIndex = -1;
+        int thirdCommaIndex = -1;
+        int commasFound = 0;
+        for (int i = 0; i < line.length(); i ++){
+            if (line.charAt(i) == '['){
+                openingBracketIndex = i;
+            }
+            if (line.charAt(i) == ','){
+                commasFound++;
+                if (commasFound == 3){
+                    thirdCommaIndex = i;
+                }
+            }
+        }
+        return line.substring(openingBracketIndex+1, thirdCommaIndex);
+        
+        //get substring from opening bracket to thrid comma as this is the 
+        //z, y and z positions
+        
+        
+    }
 }

@@ -6,6 +6,7 @@
 package footballstats;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 
 /**
  *
@@ -16,12 +17,12 @@ public class Main {
     /**
      * @param args the command line arguments
      */
-    public static void main(String[] args) throws FileNotFoundException {
+    public static void main(String[] args) throws FileNotFoundException, IOException {
 //        System.out.println("Working Directory = " +
 //              System.getProperty("user.dir"));
         String[] tagIDs = {"0B3A", "921E", "59AD"} ;
         PosLogToArff pos = new PosLogToArff();
-        pos.readFile("06052018", "passes", tagIDs);
+        pos.readFile("06052018", "pass", tagIDs);
     }
     
 }
