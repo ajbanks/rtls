@@ -19,8 +19,9 @@ public class Main {
     public static void main(String[] args) throws FileNotFoundException {
 //        System.out.println("Working Directory = " +
 //              System.getProperty("user.dir"));
+        String[] tagIDs = {"0B3A", "921E", "59AD"} ;
         PosLogToArff pos = new PosLogToArff();
-        pos.readFile("06052018", "passes", 3, new String[3]);
+        pos.readFile("06052018", "passes", tagIDs);
     }
     
 }

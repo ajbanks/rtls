@@ -26,15 +26,18 @@ public class PosLogToArff {
     
     double time = 0.0;
     int timeCount = 0;
+    int numPlayers = 0;
+    String[] playerIDs;
+    double[][] lastKnownPositions;
     
-    public void readFile(String logDate, String action, int numberOfPlayers, String playerIds[]) throws FileNotFoundException{
+    public void readFile(String logDate, String action, String tagIDs[]) throws FileNotFoundException{
         //get start and end time of each instance of an action from csv file
         //and put it in actionTimes array
         readCSVFile(logDate, action);
 //        for (int i = 0; i < actionTimes.length; i++){
 //            System.out.println(i + ": " + actionTimes[i]);
 //        }
-        
+        initialiseLastPositions(tagIDs);
         //read log file
         int numActions = actionTimes.length/2;
         actions = new ArrayList<ArrayList<String>>(numActions);
@@ -126,6 +129,8 @@ public class PosLogToArff {
                         lineNumber++;
                     }
                     //add line to the current instance
+                    //updateLastPositions(line);
+                    line =  addMissingPositions(line);
                     actions.get(actionCount-1).add(line);
                     //System.out.println("actioncount: " + (actionCount-1));
                     lineFromFile = file.nextLine();
@@ -152,11 +157,46 @@ public class PosLogToArff {
         System.out.println("number of times went by: " + actionTimeCount);
     }
     
-    private void goToPreviousLine(Scanner file, int lineNumber){
-        for(int i = 0; i <= lineNumber;i++){
-            if(file.hasNextLine())
-                file.nextLine();
+    private String addMissingPositions(String output){
+        String[] outputParts = output.split(" + ");
+        if (numPlayers != outputParts.length){
+            int playersInOutput = outputParts.length;
+            for (int i = 0; i < numPlayers; i++){
+                if (!output.contains(playerIDs[i])){
+                    playersInOutput++;
+                    output += " + " + (playersInOutput-1) +") " +  playerIDs[i] + "[";
+                    for (int j = 0; j < lastKnownPositions[i].length; j++){
+                        if (j == 0)
+                            output += lastKnownPositions[i][j];
+                        else
+                            output += "," + lastKnownPositions[i][j];
+                    }
+                    output += ",0,x00]";
+                    System.out.println("WAS MISSING " + output);                    
+                }
+            }
         }
+        return output;
+    }
+    
+    private void updateLastPositions(String output){
+        for (int i = 0; i < numPlayers; i++){
+            if (output.contains(playerIDs[i])){
+                for (int j = 0; j < 3; j++){
+                    lastKnownPositions[i][j] = -1; 
+                }
+            }
+        }
+    }
+    
+    private void initialiseLastPositions(String[] tagIDs){
+        this.playerIDs = tagIDs;
+        numPlayers = tagIDs.length;
+        lastKnownPositions = new double[tagIDs.length][3];
+        for (int i = 0; i < lastKnownPositions.length; i++){
+                for (int j = 0; j < lastKnownPositions[i].length; j++)
+                    lastKnownPositions[i][j] = -1; 
+        } 
     }
     
     public void readCSVFile(String logDate, String action) throws FileNotFoundException{
@@ -194,9 +234,5 @@ public class PosLogToArff {
         
         
     }
-    
-    
-    public void getAction(){
-        
-    }
+
 }
