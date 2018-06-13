@@ -1,9 +1,4 @@
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -11,12 +6,24 @@ import java.util.List;
 import java.util.Map;
 
 public class ARFFBuilder {
-	public Map<String, ArrayList<String>> instanceMap; 
-	public ARFFBuilder () {
-	 this.instanceMap = new HashMap<String, ArrayList<String>>();
-		
+	public Map<String, ArrayList<String>> instanceMap;
+	public int highestLength;
+	public String input;
+	public ARFFBuilder (String inputFile) {
+		this.instanceMap = new HashMap<String, ArrayList<String>>();
+		this.highestLength = 0;
+		this.input = inputFile;
+
+	}//public static void main(String[] args) {
+
+	public int getHighestLength() {
+		return highestLength;
 	}
-	
+
+	public void setHighestLength(int highestLength) {
+		this.highestLength = highestLength;
+	}
+
 	public Map<String, ArrayList<String>> getInstanceMap() {
 		return instanceMap;
 	}
@@ -24,7 +31,7 @@ public class ARFFBuilder {
 	public void setInstanceMap(Map<String, ArrayList<String>> instanceMap) {
 		this.instanceMap = instanceMap;
 	}
-	
+
 	public String actionFromString(String text) {
 		if(text.toLowerCase().contains("pass")) {
 			return "pass";
@@ -40,90 +47,104 @@ public class ARFFBuilder {
 		}
 		else return "";
 	}
-	
 
-	public static void main(String[] args) {
-		ARFFBuilder builder = new ARFFBuilder();
-	try(
-			FileWriter fw = new FileWriter("ss.txt", true);
-		    BufferedWriter bw = new BufferedWriter(fw);
-		    PrintWriter out = new PrintWriter(bw);
-			)
-		{
-		 
-	
-	int highestLength = 0;
-		
-	
-	
-	    String line = "";
-	    String previousLine = "";
-	    BufferedReader br = new BufferedReader(new FileReader("example_output.txt"));
-	    while ((line = br.readLine()) != null) {
-	       // process the line.
-	    if(line.length() > 0) {
-	    String firstLetter = line.substring(0, 1);
-	    if(firstLetter.equals("[")) {
-	    	line = line.replace("]", "");
-	    	line = line.replace("[", "");
-	    	int length = line.split(",").length;
-	    	if (length > highestLength) {highestLength = length;};
-	    	previousLine = builder.actionFromString(previousLine);
-	    	if(builder.getInstanceMap().get(previousLine) != null) {
-	    		builder.getInstanceMap().get(previousLine).add(line);
-	    	}
-	    	else {
-	    		ArrayList<String> aList = new ArrayList<String>();
-	    		builder.getInstanceMap().put(previousLine, aList);
-	    		builder.getInstanceMap().get(previousLine).add(line);
-	    	}
-	    }
-	    previousLine = line;
-	    }
-	    else {previousLine = line;}
-		
-		
-		
+
+	public void createArffFile() throws IOException{
+		readInputFile();
+		writeToFile(getInstanceMap(), arffBeginning(getHighestLength()));
+
 	}
-	
-	    Iterator it = builder.getInstanceMap().entrySet().iterator();
-	    while (it.hasNext()) {
-	        Map.Entry pair = (Map.Entry)it.next();
-	        @SuppressWarnings("unchecked")
+
+
+
+    public String arffBeginning(int noAttributes){
+		String beginning = "% 1. Title: Football Action Database\n%\n";
+		beginning =  beginning +"% 2. Sources: \n%      (a) Creator: A.Joseph & N. Francis\n%\n";
+		beginning =  beginning +"@RELATION Action";
+
+        for (int i = 0; i < noAttributes; i++){
+			beginning =  beginning + "\n@ATTRIBUTE position" + i + " NUMERIC";
+		}
+
+		beginning =  beginning +"@ATTRIBUTE class        {pass,tackle,dribble,inaccurate-pass}\n@data\n";
+				return beginning;
+	}
+
+	public void readInputFile() throws IOException {
+
+
+		String line = "";
+		String previousLine = "";
+		BufferedReader br = new BufferedReader(new FileReader("pass_output.txt"));
+		while ((line = br.readLine()) != null) {
+			// process the line.
+			if (line.length() > 0) {
+				String firstLetter = line.substring(0, 1);
+				if (firstLetter.equals("[")) {
+					line = line.replace("]", "");
+					line = line.replace("[", "");
+					int length = line.split(",").length;
+					if (length > getHighestLength()) {
+						setHighestLength(length);
+					}
+					previousLine = actionFromString(previousLine);
+					if (getInstanceMap().get(previousLine) != null) {
+						getInstanceMap().get(previousLine).add(line);
+					} else {
+						ArrayList<String> aList = new ArrayList<String>();
+						getInstanceMap().put(previousLine, aList);
+						getInstanceMap().get(previousLine).add(line);
+					}
+				}
+				previousLine = line;
+			} else {
+				previousLine = line;
+			}
+
+
+		}
+	}
+
+	public void  writeToFile( Map<String, ArrayList<String>> map, String beginning) throws IOException{
+		FileWriter fw = new FileWriter("rtlsTrain.Arff", true);
+		BufferedWriter bw = new BufferedWriter(fw);
+		PrintWriter out = new PrintWriter(bw);
+
+		Iterator it = map.entrySet().iterator();
+		while (it.hasNext()) {
+			Map.Entry pair = (Map.Entry)it.next();
+			@SuppressWarnings("unchecked")
 			ArrayList<String> actionList = (ArrayList<String>) pair.getValue();
-	        String action = (String) pair.getKey();
-	        for (String positions : actionList) {
-	        		String output = "";
-	        		String [] lineArray = positions.split(",");
-	        		int count = 0;
-	        		output = output +"\n";
-	        		//output = output +"<";
-	        		for (int i = 0; i <= highestLength; i++) {
-	        			if(count >= lineArray.length) {
-	        				output = output +"?";
-	        			}
-	        			else {
-	        				output = output + lineArray[i];
-	        			}
-	        			output = output +",";	
-	        			count++;
-	        		}
-	        		output = output + "," + action;
-	        		//out.println(action + "\n");
-	        		out.println(output);
-	        		
-	        		
-	        }
-	    }
-	
-	
-	    out.close();
-	   
-	}
-	catch (IOException e) {
-	    //exception handling left as an exercise for the reader
-	}
-		System.out.println("dd");
+			String action = (String) pair.getKey();
+			for (String positions : actionList) {
+				String output = "";
+				String [] lineArray = positions.split(",");
+				int count = 0;
+				output = output +"\n";
+				//output = output +"<";
+				for (int i = 0; i < getHighestLength(); i++) {
+					if(count >= lineArray.length) {
+						output = output +"?";
+					}
+					else {
+						output = output + lineArray[i];
+					}
+					output = output +",";
+					count++;
+				}
+				output = output + action;
+				//out.println(action + "\n");
+				out.println(beginning);
+				out.println(output);
+
+
+			}
+		}
+
+
+		out.close();
+
 	}
 
 }
+
