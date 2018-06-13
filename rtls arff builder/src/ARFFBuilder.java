@@ -14,7 +14,14 @@ public class ARFFBuilder {
 		this.highestLength = 0;
 		this.input = inputFile;
 
-	}//public static void main(String[] args) {
+	}
+	public static void main(String[] args) {
+		try {
+			ARFFBuilder b = new ARFFBuilder("pass_output.txt");
+			b.createArffFile();
+		}
+		catch (IOException e){}
+	}
 
 	public int getHighestLength() {
 		return highestLength;
@@ -66,7 +73,7 @@ public class ARFFBuilder {
 			beginning =  beginning + "\n@ATTRIBUTE position" + i + " NUMERIC";
 		}
 
-		beginning =  beginning +"@ATTRIBUTE class        {pass,tackle,dribble,inaccurate-pass}\n@data\n";
+		beginning =  beginning +"\n@ATTRIBUTE class        {pass,tackle,dribble,inaccurate-pass}\n@data\n";
 				return beginning;
 	}
 
@@ -83,6 +90,7 @@ public class ARFFBuilder {
 				if (firstLetter.equals("[")) {
 					line = line.replace("]", "");
 					line = line.replace("[", "");
+					line = line.replace("\n", "");
 					int length = line.split(",").length;
 					if (length > getHighestLength()) {
 						setHighestLength(length);
@@ -109,7 +117,7 @@ public class ARFFBuilder {
 		FileWriter fw = new FileWriter("rtlsTrain.Arff", true);
 		BufferedWriter bw = new BufferedWriter(fw);
 		PrintWriter out = new PrintWriter(bw);
-
+		out.println(beginning);
 		Iterator it = map.entrySet().iterator();
 		while (it.hasNext()) {
 			Map.Entry pair = (Map.Entry)it.next();
@@ -120,7 +128,7 @@ public class ARFFBuilder {
 				String output = "";
 				String [] lineArray = positions.split(",");
 				int count = 0;
-				output = output +"\n";
+				//output = output + "\n";
 				//output = output +"<";
 				for (int i = 0; i < getHighestLength(); i++) {
 					if(count >= lineArray.length) {
@@ -134,7 +142,7 @@ public class ARFFBuilder {
 				}
 				output = output + action;
 				//out.println(action + "\n");
-				out.println(beginning);
+
 				out.println(output);
 
 
