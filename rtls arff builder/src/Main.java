@@ -17,12 +17,16 @@ public class Main {
     /**
      * @param args the command line arguments
      */
-    public static void main(String[] args) throws FileNotFoundException, IOException {
+    public static void main(String[] args) throws FileNotFoundException, IOException, Exception {
 //        System.out.println("Working Directory = " +
 //              System.getProperty("user.dir"));
+        String action = "tackle";
         String[] tagIDs = {"0B3A", "921E", "59AD"} ;
         PosLogToArff pos = new PosLogToArff();
-        pos.readFile("06052018", "pass", tagIDs);
+        pos.readFile("06052018", action, tagIDs);
+//        String filePath = action + "_output.txt";
+//        ARFFBuilder arff = new ARFFBuilder(filePath);
+        //Experiments();
     }
     
 }

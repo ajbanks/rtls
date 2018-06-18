@@ -36,6 +36,8 @@ public class PosLogToArff {
     int numPlayers = 0;
     String[] playerIDs;
     double[][] lastKnownPositions;
+    double lastTime = 0.000;
+    int actionTimeCount = 0;
     
     public void readFile(String logDate, String action, String tagIDs[]) throws FileNotFoundException, IOException{
         //get start and end time of each instance of an action from csv file
@@ -48,13 +50,13 @@ public class PosLogToArff {
         //read log file
         int numActions = actionTimes.length/2;
         actions = new ArrayList<ArrayList<String>>(numActions);
-        String fileName = "../../logs/" + logDate + "/pos_log_2.txt";
+        String fileName = "../../logs/" + logDate + "/pos_log_fixed_alex.txt";
         Scanner file = new Scanner(new File(fileName));
         int startRecording = 0;
         String actionStart = action + " start";
         String actionEnd = action + " end";
         //the index currently at from the actionTime array eg pass 0 starts, pass 0 end, pass 1 start
-        int actionTimeCount = 0;
+        actionTimeCount = 0;
         //the action instance number eg pass 0, pass 1, pass 2
         int actionCount = 0;
         //this indicates whether an instance of an action has started
@@ -163,8 +165,10 @@ public class PosLogToArff {
                     time = timeCount/10.0;
                     timeCount++;
                     //lineFromFile = file.nextLine();
+                    while( checkTimeGap(lineFromFile, actionCount, hasStarted)){
+                        ;
+                    }
                 }
-                
             }
         }
         
@@ -213,6 +217,119 @@ public class PosLogToArff {
         }
     }
     
+    private double getTime(String currentTimeInfo){
+        int decimalIndex = currentTimeInfo.indexOf('.');
+        String currentTimeString = currentTimeInfo.substring(1, decimalIndex + 4);
+        double currentTime = Double.parseDouble(currentTimeString);
+        return currentTime;
+    }
+    
+    private void storeTime(double currentTime){
+        //double currentTime = getTime(currentTimeInfo);
+        lastTime = currentTime;
+    }
+    
+    private boolean checkTimeGap(String currentTimeInfo, int actionCount, boolean hasStarted){
+        double currentTime = getTime(currentTimeInfo);
+        if (lastTime == 0)
+            lastTime = currentTime;
+        System.out.println("last time: " + lastTime + ", current time: " + currentTime);
+        if (lastTime + 0.110 < currentTime){
+            System.out.println("there was a time gap");
+            
+            
+            //lastTime += 0.1;
+            //there has been a time gap so use last values by calling use last values
+            if (hasStarted)
+                addPositionsForMissingTimes(currentTime, actionCount, hasStarted);
+            //100 milliseconds has passed so increase time
+            time = timeCount/10.0;
+            timeCount++;
+            lastTime += 0.10;
+            //System.out.println("incremented last time");
+            //storeTime(lastTime);
+            return true;
+        }
+        else{
+            storeTime(currentTime);
+            return false;
+        }
+    }
+    
+    private boolean checkTimeGap(double currentTime, int actionCount, boolean hasStarted){
+        System.out.println("last time: " + lastTime + ", current time: " + currentTime);
+        if (lastTime + 0.110 < currentTime){
+            System.out.println("there was a time gap");
+            
+            //lastTime += 0.1;
+            //there has been a time gap so use last values by calling use last values
+            //System.out.println("before if");
+            if (hasStarted)
+                addPositionsForMissingTimes(currentTime, actionCount, hasStarted);
+            //System.out.println("after if");
+            //100 milliseconds has passed so increase time
+            time = timeCount/10.0;
+            timeCount++;
+            lastTime += 0.1;
+            //System.out.println("incremented last time");
+            //storeTime(lastTime);
+            return true;
+        }
+        else{
+            storeTime(currentTime);
+            return false;
+        }
+    }
+    
+    private void addPositionsForMissingTimes(double currentTime, int actionCount, boolean hasStarted){
+        //if the time is equal to the time in actionTimes then 
+        //it is either the beginnging of an instance of an action
+        if (actionTimes[actionTimeCount] == time){
+            //if an instance has already started then it is now
+            //the end of the instance and increase actionTimeCount
+            //to go to the next element in actionTimes (which will be
+            //the start of the next instance)
+            if (hasStarted){
+                hasStarted = false;
+                actionTimeCount++;
+                //System.out.println("END OF INSTANCE");
+            }
+            //else if an instance hasnt already started then it is now
+            //the beginning of an instance and increase actionTimeCount
+            //to go to the next element in actionTimes (which will be the
+            //end of this instance). Add new ArrayList to actions
+            //to hold positios for this instance
+            else{
+                hasStarted  = true;
+                actions.add(new ArrayList<String>());
+                actionTimeCount++;
+                actionCount++;
+                //System.out.println("START OF INSTANCE");
+                //System.out.println(lineFromFile);
+            }
+            //System.out.println("actiontime count: " + actionTimeCount);
+        }
+        //make the output for this time
+        int playersInOutput = 0;
+        String output = "";
+        for (int i = 0; i < numPlayers; i++){
+                playersInOutput++;
+                if (i == 0)
+                    output += (playersInOutput-1) +") " +  playerIDs[i] + "[";
+                else
+                    output += " & " + (playersInOutput-1) +") " +  playerIDs[i] + "[";
+                for (int j = 0; j < lastKnownPositions[i].length; j++){
+                    if (j == 0)
+                        output += lastKnownPositions[i][j];
+                    else
+                        output += "," + lastKnownPositions[i][j];
+                }
+                output += ",0,x00]";
+        }
+        actions.get(actionCount-1).add(output);
+        //checkTimeGap(currentTime, actionCount, hasStarted);
+    }
+    
     private void initialiseLastPositions(String[] tagIDs){
         this.playerIDs = tagIDs;
         numPlayers = tagIDs.length;
@@ -224,7 +341,7 @@ public class PosLogToArff {
     }
     
     public void readCSVFile(String logDate, String action) throws FileNotFoundException{
-        String fileName = "../../logs/" + logDate + "/" + action + "2.csv";
+        String fileName = "../../logs/" + logDate + "/" + action + ".csv";
         Scanner file = new Scanner(new File(fileName));
         
         int lines = 0;
@@ -272,9 +389,9 @@ public class PosLogToArff {
                 String actionLine = actions.get(i).get(j);
                 String[] actionLinesParts = actionLine.split(" & ");
                 for (int k = 0; k < actionLinesParts.length; k++){
-                    if (k == 0)
-                        output += positionsForLine(actionLinesParts[k]);
-                    else
+//                    if (j == 0)
+//                        output += positionsForLine(actionLinesParts[k]);
+//                    else
                         output += "," + positionsForLine(actionLinesParts[k]);
                 }
             }
