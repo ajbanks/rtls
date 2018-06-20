@@ -1,3 +1,5 @@
+package footballstats;
+
 import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -6,21 +8,28 @@ import java.util.List;
 import java.util.Map;
 
 public class ARFFBuilder {
+    
 	public Map<String, ArrayList<String>> instanceMap;
 	public int highestLength;
 	public String input;
+        
 	public ARFFBuilder (String inputFile) {
 		this.instanceMap = new HashMap<String, ArrayList<String>>();
 		this.highestLength = 0;
 		this.input = inputFile;
 
 	}
+        
 	public static void main(String[] args) {
-		try {
-			ARFFBuilder b = new ARFFBuilder("pass_output.txt");
-			b.createArffFile();
-		}
-		catch (IOException e){}
+            String action = "action";
+            String logDate = "06052018";
+            String filePath = "../../action_times/" + logDate + "/" + action + "_output.txt";
+            filePath = action + "_output.txt";
+            try {
+                ARFFBuilder b = new ARFFBuilder(filePath);
+                b.createArffFile();
+            }
+            catch (IOException e){}
 	}
 
 	public int getHighestLength() {
@@ -49,12 +58,11 @@ public class ARFFBuilder {
 		if(text.toLowerCase().contains("dribble")) {
 			return "dribble";
 		}
-		if(text.toLowerCase().contains("innacurate")) {
-			return "innacuratePass";
+		if(text.toLowerCase().contains("inaccuratep")) {
+			return "inaccuratePass";
 		}
 		else return "";
 	}
-
 
 	public void createArffFile() throws IOException{
 		readInputFile();
@@ -62,9 +70,7 @@ public class ARFFBuilder {
 
 	}
 
-
-
-    public String arffBeginning(int noAttributes){
+        public String arffBeginning(int noAttributes){
 		String beginning = "% 1. Title: Football Action Database\n%\n";
 		beginning =  beginning +"% 2. Sources: \n%      (a) Creator: A.Joseph & N. Francis\n%\n";
 		beginning =  beginning +"@RELATION Action";
@@ -73,7 +79,7 @@ public class ARFFBuilder {
 			beginning =  beginning + "\n@ATTRIBUTE position" + i + " NUMERIC";
 		}
 
-		beginning =  beginning +"\n@ATTRIBUTE class        {pass,tackle,dribble,inaccurate-pass}\n@data\n";
+		beginning =  beginning +"\n@ATTRIBUTE class        {pass,tackle,dribble,inaccuratePass}\n@data\n";
 				return beginning;
 	}
 
@@ -82,7 +88,7 @@ public class ARFFBuilder {
 
 		String line = "";
 		String previousLine = "";
-		BufferedReader br = new BufferedReader(new FileReader("pass_output.txt"));
+		BufferedReader br = new BufferedReader(new FileReader(input));
 		while ((line = br.readLine()) != null) {
 			// process the line.
 			if (line.length() > 0) {
@@ -114,7 +120,7 @@ public class ARFFBuilder {
 	}
 
 	public void  writeToFile( Map<String, ArrayList<String>> map, String beginning) throws IOException{
-		FileWriter fw = new FileWriter("rtlsTrain.Arff", true);
+		FileWriter fw = new FileWriter(input + "_rtlsTrain.arff", true);
 		BufferedWriter bw = new BufferedWriter(fw);
 		PrintWriter out = new PrintWriter(bw);
 		out.println(beginning);
@@ -151,8 +157,7 @@ public class ARFFBuilder {
 
 
 		out.close();
-
+            System.out.println("done");
 	}
 
 }
-
