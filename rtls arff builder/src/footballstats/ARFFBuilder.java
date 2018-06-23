@@ -12,25 +12,27 @@ public class ARFFBuilder {
 	public Map<String, ArrayList<String>> instanceMap;
 	public int highestLength;
 	public String input;
+	boolean inputUnknownValues;
         
-	public ARFFBuilder (String inputFile) {
+	public ARFFBuilder (String inputFile, boolean inputUnknownValues) {
 		this.instanceMap = new HashMap<String, ArrayList<String>>();
 		this.highestLength = 0;
 		this.input = inputFile;
+		this.inputUnknownValues = inputUnknownValues;
 
 	}
         
-	public static void main(String[] args) {
+	/*public static void main(String[] args) {
             String action = "action";
             String logDate = "06052018";
             String filePath = "../../action_times/" + logDate + "/" + action + "_output.txt";
             filePath = action + "_output.txt";
             try {
-                ARFFBuilder b = new ARFFBuilder(filePath);
+                ARFFBuilder b = new ARFFBuilder(filePath, false);
                 b.createArffFile();
             }
             catch (IOException e){}
-	}
+	}*/
 
 	public int getHighestLength() {
 		return highestLength;
@@ -136,15 +138,27 @@ public class ARFFBuilder {
 				int count = 0;
 				//output = output + "\n";
 				//output = output +"<";
+				boolean beginAddingLastKnownPos = false;
 				for (int i = 0; i < getHighestLength(); i++) {
 					if(count >= lineArray.length) {
-						output = output +"?";
+						if (!inputUnknownValues) {
+							output = output + lineArray[lineArray.length - 3] + ",";
+							output = output + lineArray[lineArray.length - 2] + ",";
+							output = output + lineArray[lineArray.length - 1];
+							count += 3;
+							i += 2;
+						}
+						else {
+							output = output + "?";
+							count++;
+						}
 					}
 					else {
 						output = output + lineArray[i];
+						count++;
 					}
 					output = output +",";
-					count++;
+
 				}
 				output = output + action;
 				//out.println(action + "\n");
